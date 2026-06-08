@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SIT-321-2023-G">
+<meta name="theme-color" content="#0a1628">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Control SIT-321-2023-G</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a1628;
+  --surface:#111e35;
+  --surface2:#1a2d4a;
+  --border:#1f3a5f;
+  --accent:#2563eb;
+  --accent-dim:#1e4db7;
+  --text:#e8edf5;
+  --text-muted:#6b829e;
+  --text-dim:#3d5068;
+  --green:#16a34a;
+  --green-bg:#0d2818;
+  --green-border:#14532d;
+  --orange:#d97706;
+  --orange-bg:#271a06;
+  --orange-border:#78350f;
+  --red:#dc2626;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;overflow-x:hidden}
+
+/* TOPBAR */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.topbar-left{display:flex;flex-direction:column;gap:2px}
+.topbar-title{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--accent);letter-spacing:0.05em}
+.topbar-sub{font-size:11px;color:var(--text-muted)}
+.sync-badge{display:flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);color:var(--text-muted);background:var(--surface2);padding:4px 10px;border-radius:4px;border:1px solid var(--border)}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-dot.syncing{background:var(--orange);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sync-dot.error{background:var(--red);animation:none}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;gap:4px;border:none;background:transparent;color:var(--text-muted);font-family:var(--sans);font-size:10px;cursor:pointer;transition:color 0.15s}
+.nav-item.active{color:var(--accent)}
+.nav-item svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* SCREENS */
+.screen{display:none;padding:16px;padding-bottom:80px;flex-direction:column;gap:12px;animation:fadeIn 0.15s ease}
+.screen.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* METRIC GRID */
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.metric-label{font-size:10px;font-family:var(--mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+.metric-val{font-size:24px;font-weight:300;font-family:var(--mono);color:var(--text)}
+.metric-val.green{color:var(--green)}
+.metric-val.orange{color:var(--orange)}
+.metric-val.blue{color:var(--accent)}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.card-title{font-size:11px;font-family:var(--mono);color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+
+/* INFO ROWS */
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)}
+.info-row:last-child{border-bottom:none}
+.info-key{font-size:12px;color:var(--text-muted)}
+.info-val{font-size:12px;font-family:var(--mono);color:var(--text);text-align:right}
+
+/* ALERT */
+.alerta{background:var(--orange-bg);border:1px solid var(--orange-border);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--orange);display:flex;align-items:flex-start;gap:8px}
+
+/* CONTACTS */
+.contact-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.contact-item:last-child{border-bottom:none}
+.avatar{width:34px;height:34px;min-width:34px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--accent)}
+.contact-name{font-size:13px;font-weight:500;color:var(--text)}
+.contact-rol{font-size:11px;color:var(--text-muted);margin-top:1px}
+.contact-email{font-size:11px;color:var(--accent);margin-top:1px}
+
+/* EXPORT BTN */
+.btn-export{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;cursor:pointer;transition:border-color 0.15s,background 0.15s}
+.btn-export:active{background:var(--border)}
+.btn-export svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* FILTER */
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.filter-row select{flex:1;min-width:100px;font-size:12px;padding:7px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:var(--sans);appearance:none;-webkit-appearance:none}
+.filter-row label{font-size:11px;font-family:var(--mono);color:var(--text-muted)}
+
+/* EP LIST */
+.ep-list{display:flex;flex-direction:column;gap:8px}
+.ep-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.ep-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;gap:8px;cursor:pointer}
+.ep-num{font-family:var(--mono);font-size:11px;color:var(--text-muted)}
+.ep-mes{font-size:13px;font-weight:500;color:var(--text)}
+.ep-neto{font-family:var(--mono);font-size:12px;color:var(--text-muted)}
+.estado-pill{font-size:10px;font-family:var(--mono);padding:3px 8px;border-radius:3px;font-weight:500;letter-spacing:0.05em;cursor:pointer;border:none}
+.pagado{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.pendiente{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-border)}
+.ep-body{display:none;border-top:1px solid var(--border);padding:12px 14px;flex-direction:column;gap:8px}
+.ep-body.open{display:flex}
+.ep-field{display:flex;flex-direction:column;gap:4px}
+.ep-field label{font-size:10px;font-family:var(--mono);color:var(--text-dim);text-transform:uppercase;letter-spacing:0.06em}
+.ep-input{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:7px 10px;font-size:12px;color:var(--text);font-family:var(--mono);width:100%}
+.ep-input:focus{outline:none;border-color:var(--accent)}
+.ep-estado-row{display:flex;gap:6px}
+.estado-btn{flex:1;padding:8px;border-radius:5px;font-size:12px;font-family:var(--mono);border:1px solid var(--border);background:var(--surface2);color:var(--text-muted);cursor:pointer;transition:all 0.12s}
+.estado-btn.sel-pagado{background:var(--green-bg);border-color:var(--green-border);color:var(--green)}
+.estado-btn.sel-pendiente{background:var(--orange-bg);border-color:var(--orange-border);color:var(--orange)}
+.btn-guardar{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:6px;border:1px solid var(--accent-dim);background:transparent;color:var(--accent);font-family:var(--mono);font-size:12px;cursor:pointer;width:100%;transition:background 0.12s}
+.btn-guardar:active{background:var(--surface2)}
+.btn-guardar.saving{opacity:0.6;pointer-events:none}
+.btn-guardar svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.save-msg{font-size:11px;font-family:var(--mono);text-align:center;height:16px;color:var(--green)}
+
+/* TOTALES */
+.totales-bar{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:12px}
+.totales-label{color:var(--text-muted)}
+.totales-val{color:var(--text);font-weight:500}
+
+/* CHECKLIST */
+.month-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.month-btn{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 8px;text-align:center;cursor:pointer;transition:border-color 0.12s}
+.month-btn.sel{border-color:var(--accent);background:rgba(37,99,235,0.08)}
+.month-name{font-size:12px;font-weight:500;color:var(--text)}
+.month-btn.sel .month-name{color:var(--accent)}
+.month-prog{font-size:10px;font-family:var(--mono);color:var(--text-muted);margin-top:3px}
+.check-list{display:flex;flex-direction:column;gap:6px}
+.check-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:7px;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:border-color 0.12s,background 0.12s}
+.check-item.done{background:var(--green-bg);border-color:var(--green-border)}
+.check-box{width:20px;height:20px;min-width:20px;border-radius:4px;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center}
+.check-item.done .check-box{background:var(--green);border-color:var(--green)}
+.check-box svg{width:12px;height:12px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;display:none}
+.check-item.done .check-box svg{display:block}
+.check-label{font-size:13px;color:var(--text);line-height:1.4}
+.check-item.done .check-label{color:var(--green)}
+.check-prog-label{font-size:11px;font-family:var(--mono);color:var(--text-muted);text-align:center;padding:4px}
+
+/* TOAST */
+.toast{position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 16px;font-size:12px;font-family:var(--mono);color:var(--text);opacity:0;transition:all 0.2s;z-index:200;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:var(--green-border);color:var(--green)}
+.toast.err{border-color:var(--red);color:var(--red)}
+
+/* OFFLINE BANNER */
+.offline-bar{display:none;background:var(--orange-bg);border-bottom:1px solid var(--orange-border);padding:6px 16px;font-size:11px;font-family:var(--mono);color:var(--orange);text-align:center}
+.offline-bar.show{display:block}
+
+/* LOADING */
+.loading-overlay{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:300;transition:opacity 0.3s}
+.loading-overlay.hidden{opacity:0;pointer-events:none}
+.loading-title{font-family:var(--mono);font-size:13px;color:var(--accent)}
+.loading-sub{font-size:11px;color:var(--text-muted)}
+.loading-bar{width:160px;height:2px;background:var(--surface2);border-radius:1px;overflow:hidden}
+.loading-fill{height:100%;background:var(--accent);animation:load 1.5s ease infinite}
+@keyframes load{0%{width:0;margin-left:0}50%{width:100%;margin-left:0}100%{width:0;margin-left:100%}}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="loading-title">SIT-321-2023-G</div>
+  <div class="loading-bar"><div class="loading-fill"></div></div>
+  <div class="loading-sub" id="loading-msg">Conectando con Google Sheets…</div>
+</div>
+
+<div class="offline-bar" id="offline-bar">Sin conexión — los cambios se sincronizarán al reconectarse</div>
+<div class="toast" id="toast"></div>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-title">SIT-321-2023-G</div>
+    <div class="topbar-sub">Neosecure S.A. · Metro</div>
+  </div>
+  <div class="sync-badge" id="sync-badge">
+    <div class="sync-dot" id="sync-dot"></div>
+    <span id="sync-label">sincronizado</span>
+  </div>
+</div>
+
+<!-- SCREENS -->
+<div id="screen-dashboard" class="screen active">
+  <div class="metric-grid">
+    <div class="metric"><div class="metric-label">Total EPs</div><div class="metric-val blue">36</div></div>
+    <div class="metric"><div class="metric-label">Pagados</div><div class="metric-val green" id="d-pagados">—</div></div>
+    <div class="metric"><div class="metric-label">Pendientes</div><div class="metric-val orange" id="d-pendientes">—</div></div>
+    <div class="metric"><div class="metric-label">Neto pagado UF</div><div class="metric-val" id="d-neto">—</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Datos del contrato</div>
+    <div class="info-row"><span class="info-key">N° Contrato</span><span class="info-val">SIT-321-2023-G</span></div>
+    <div class="info-row"><span class="info-key">ID Licitación</span><span class="info-val">CSER-79-2023</span></div>
+    <div class="info-row"><span class="info-key">N° Pedido SAP</span><span class="info-val">4600003617</span></div>
+    <div class="info-row"><span class="info-key">Adjudicación</span><span class="info-val">29/12/2023</span></div>
+    <div class="info-row"><span class="info-key">Inicio</span><span class="info-val">01/01/2024</span></div>
+    <div class="info-row"><span class="info-key">Término</span><span class="info-val">31/12/2026</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Garantía vigente</div>
+    <div class="info-row"><span class="info-key">Tipo</span><span class="info-val">Boleta Garantía BCI</span></div>
+    <div class="info-row"><span class="info-key">N° Doc / SAP</span><span class="info-val">789118 / 31220</span></div>
+    <div class="info-row"><span class="info-key">Monto</span><span class="info-val">UF 3.333</span></div>
+    <div class="info-row"><span class="info-key">Vencimiento</span><span class="info-val" style="color:var(--green)">04/05/2027</span></div>
+  </div>
+
+  <div class="alerta">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    Garantía vence 04/05/2027 — renovar con anticipación
+  </div>
+
+  <div class="card">
+    <div class="card-title">Contactos clave</div>
+    <div class="contact-item">
+      <div class="avatar">SM</div>
+      <div><div class="contact-name">Sofía Manzano Alcalde</div><div class="contact-rol">Contacto operativo · Neosecure</div><div class="contact-email">smanzano@neosecure.com</div></div>
+    </div>
+    <div class="contact-item">
+      <div class="avatar">SD</div>
+      <div><div class="contact-name">Sebastián Díaz</div><div class="contact-rol">Gest. Pólizas/Garantías · Metro</div><div class="contact-email">sdiazp@metro.cl</div></div>
+    </div>
+  </div>
+
+  <button class="btn-export" onclick="exportarExcel()">
+    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Descargar Excel local
+  </button>
+</div>
+
+<div id="screen-pagos" class="screen">
+  <div class="metric-grid">
+    <div class="metric"><div class="metric-label">Pagados</div><div class="metric-val green" id="p-pagados">—</div></div>
+    <div class="metric"><div class="metric-label">Pendientes</div><div class="metric-val orange" id="p-pendientes">—</div></div>
+    <div class="metric"><div class="metric-label">Valor EP (UF)</div><div class="metric-val">925,9</div></div>
+    <div class="metric"><div class="metric-label">Neto pag. UF</div><div class="metric-val blue" id="p-neto">—</div></div>
+  </div>
+
+  <div class="card" style="padding:12px 14px">
+    <div class="filter-row">
+      <label>Estado:</label>
+      <select id="f-estado" onchange="filtrar()">
+        <option value="todos">Todos</option>
+        <option value="PAGADO">Pagado</option>
+        <option value="PENDIENTE">Pendiente</option>
+      </select>
+      <label>Año:</label>
+      <select id="f-anio" onchange="filtrar()">
+        <option value="todos">Todos</option>
+        <option value="2024">2024</option>
+        <option value="2025">2025</option>
+        <option value="2026">2026</option>
+      </select>
+    </div>
+    <div class="ep-list" id="ep-list"></div>
+    <div class="totales-bar" style="margin-top:10px">
+      <span class="totales-label" id="ep-count">36 registros</span>
+      <span class="totales-val">Total: <span id="ep-total">—</span> UF</span>
+    </div>
+  </div>
+</div>
+
+<div id="screen-checklist" class="screen">
+  <div class="card">
+    <div class="card-title">Mes a revisar</div>
+    <div class="month-grid" id="month-grid"></div>
+  </div>
+  <div class="card" id="check-panel" style="display:none">
+    <div class="card-title" id="check-panel-title">—</div>
+    <div class="check-list" id="check-list"></div>
+    <div class="check-prog-label" id="check-prog">—</div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="nav('dashboard',this)" aria-label="Dashboard">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </button>
+  <button class="nav-item" onclick="nav('pagos',this)" aria-label="Estados de pago">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+    Pagos
+  </button>
+  <button class="nav-item" onclick="nav('checklist',this)" aria-label="Checklist mensual">
+    <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    Checklist
+  </button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+// =============================================
+// CONFIGURACIÓN — EDITAR AQUÍ
+// =============================================
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyPoUI6__gzzLt7i5GFqCLdaRztbHCtqfD-gXrihwAgSbaERdC8dfDIteil80L8S0YNw/exec';
+// =============================================
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const ITEMS_CHECK = [
+  'Validar informes diarios del mes anterior',
+  'Validar informes semanales del mes anterior',
+  'Revisar y aprobar informe mensual SOC',
+  'Verificar vigencia Boleta de Garantía',
+  'Verificar vigencia Seguros de Resp. Civil',
+];
+
+let eps = [];
+let checkState = {};
+let selectedMes = null;
+let openEP = null;
+MESES.forEach(m => { checkState[m] = ITEMS_CHECK.map(()=>false); });
+
+// ---- OFFLINE DETECTION ----
+function updateOnline() {
+  document.getElementById('offline-bar').classList.toggle('show', !navigator.onLine);
+}
+window.addEventListener('online', updateOnline);
+window.addEventListener('offline', updateOnline);
+updateOnline();
+
+// ---- TOAST ----
+let toastTimer;
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast', 2500);
+}
+
+// ---- SYNC BADGE ----
+function setSyncState(state) {
+  const dot = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  dot.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
+  label.textContent = state === 'syncing' ? 'sincronizando…' : state === 'error' ? 'sin sync' : 'sincronizado';
+}
+
+// ---- CARGAR DATOS DESDE GOOGLE SHEETS ----
+async function cargarDatos() {
+  if (SCRIPT_URL === 'PEGAR_URL_DEL_SCRIPT_AQUI') {
+    cargarDatosMock();
+    return;
+  }
+  try {
+    setSyncState('syncing');
+    const r = await fetch(SCRIPT_URL + '?action=getDatos');
+    const data = await r.json();
+    eps = data.eps;
+    if (data.checklist) checkState = data.checklist;
+    renderTodo();
+    setSyncState('ok');
+  } catch(e) {
+    cargarDatosMock();
+    setSyncState('error');
+    showToast('Sin conexión — modo offline', 'err');
+  }
+  document.getElementById('loading').classList.add('hidden');
+}
+
+// ---- DATOS LOCALES (si no hay Google Sheets aún) ----
+function cargarDatosMock() {
+  eps = [
+    {n:1,mes:'Enero 2024',cas:'19/06/2024',valor:925.9,multas:0,estado:'PAGADO',obs:'1er EP contrato'},
+    {n:2,mes:'Febrero 2024',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:3,mes:'Marzo 2024',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:4,mes:'Abril 2024',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:5,mes:'Mayo 2024',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:6,mes:'Junio 2024',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:7,mes:'Julio 2024',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:8,mes:'Agosto 2024',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:9,mes:'Septiembre 2024',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:10,mes:'Octubre 2024',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:11,mes:'Noviembre 2024',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:12,mes:'Diciembre 2024',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:13,mes:'Enero 2025',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:14,mes:'Febrero 2025',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:15,mes:'Marzo 2025',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:16,mes:'Abril 2025',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:17,mes:'Mayo 2025',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:18,mes:'Junio 2025',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:19,mes:'Julio 2025',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:20,mes:'Agosto 2025',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:21,mes:'Septiembre 2025',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:22,mes:'Octubre 2025',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:23,mes:'Noviembre 2025',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:24,mes:'Diciembre 2025',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:25,mes:'Enero 2026',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:26,mes:'Febrero 2026',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:27,mes:'Marzo 2026',cas:'',valor:925.9,multas:0,estado:'PAGADO',obs:''},
+    {n:28,mes:'Abril 2026',cas:'10/04/2026',valor:925.9,multas:0,estado:'PENDIENTE',obs:'CAS emitido 10-04-2026'},
+    {n:29,mes:'Mayo 2026',cas:'',valor:925.9,multas:0,estado:'PENDIENTE',obs:''},
+    {n:30,mes:'Junio 2026',cas:'',valor:925.9,multas:0,estado:'PENDIENTE',obs:''},
+    {n:31,mes:'Julio 2026',cas:'',valor:925.9,multas:0,estado:'PENDIENTE',obs:''},
+    {n:32,mes:'Agosto 2026',cas:'',valor:925.9,multas:0,estado:'PENDIENTE',obs:''},
+    {n:33,mes:'Septiembre 2026',cas:'',valor:925.9,multas:0,estado:'PENDIENTE',obs:''},
+    {n:34,mes:'Octubre 2026',cas:'',valor:925.9,multas:0,estado:'PENDIENTE',obs:''},
+    {n:35,mes:'Noviembre 2026',cas:'',valor:925.9,multas:0,estado:'PENDIENTE',obs:''},
+    {n:36,mes:'Diciembre 2026',cas:'',valor:925.9,multas:0,estado:'PENDIENTE',obs:''},
+  ];
+  renderTodo();
+  document.getElementById('loading').classList.add('hidden');
+}
+
+// ---- GUARDAR EN GOOGLE SHEETS ----
+async function guardarEP(ep) {
+  if (SCRIPT_URL === 'PEGAR_URL_DEL_SCRIPT_AQUI') {
+    showToast('Guardado local (sin sync)', 'ok');
+    return;
+  }
+  setSyncState('syncing');
+  try {
+    await fetch(SCRIPT_URL, {
+      method:'POST',
+      body: JSON.stringify({action:'updateEP', ep}),
+    });
+    setSyncState('ok');
+    showToast('Guardado y sincronizado ✓');
+  } catch(e) {
+    setSyncState('error');
+    showToast('Error al sincronizar', 'err');
+  }
+}
+
+async function guardarCheck(mes, idx, valor) {
+  if (SCRIPT_URL === 'PEGAR_URL_DEL_SCRIPT_AQUI') return;
+  try {
+    await fetch(SCRIPT_URL, {
+      method:'POST',
+      body: JSON.stringify({action:'updateCheck', mes, idx, valor}),
+    });
+  } catch(e) {}
+}
+
+// ---- RENDER TODO ----
+function renderTodo() {
+  actualizarMetricas();
+  filtrar();
+  buildMonthGrid();
+}
+
+function actualizarMetricas() {
+  const pag = eps.filter(e=>e.estado==='PAGADO').length;
+  const pen = eps.filter(e=>e.estado==='PENDIENTE').length;
+  const neto = eps.filter(e=>e.estado==='PAGADO').reduce((s,e)=>s+(e.valor-e.multas),0);
+  const fmt = v => v.toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1});
+  ['d-pagados','p-pagados'].forEach(id => document.getElementById(id).textContent = pag);
+  ['d-pendientes','p-pendientes'].forEach(id => document.getElementById(id).textContent = pen);
+  ['d-neto','p-neto'].forEach(id => document.getElementById(id).textContent = fmt(neto));
+}
+
+// ---- EP LIST ----
+function filtrar() {
+  const est = document.getElementById('f-estado').value;
+  const anio = document.getElementById('f-anio').value;
+  const filtered = eps.filter(e =>
+    (est==='todos'||e.estado===est) &&
+    (anio==='todos'||e.mes.includes(anio))
+  );
+  const list = document.getElementById('ep-list');
+  list.innerHTML = filtered.map(ep => renderEPCard(ep)).join('');
+  const total = filtered.reduce((s,e)=>s+e.valor,0);
+  document.getElementById('ep-count').textContent = filtered.length + ' registros';
+  document.getElementById('ep-total').textContent = total.toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1});
+}
+
+function renderEPCard(ep) {
+  const neto = (ep.valor - ep.multas).toFixed(1);
+  const isOpen = openEP === ep.n;
+  const pillCls = ep.estado === 'PAGADO' ? 'pagado' : 'pendiente';
+  const pillTxt = ep.estado === 'PAGADO' ? 'PAGADO' : 'PENDIENTE';
+  const selPag = ep.estado==='PAGADO' ? 'sel-pagado' : '';
+  const selPen = ep.estado==='PENDIENTE' ? 'sel-pendiente' : '';
+  return `<div class="ep-card" id="epc-${ep.n}">
+    <div class="ep-header" onclick="toggleEP(${ep.n})">
+      <div>
+        <div class="ep-num">EP ${ep.n.toString().padStart(2,'0')}</div>
+        <div class="ep-mes">${ep.mes}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="ep-neto">${neto} UF</span>
+        <span class="estado-pill ${pillCls}">${pillTxt}</span>
+      </div>
+    </div>
+    <div class="ep-body${isOpen?' open':''}" id="epb-${ep.n}">
+      <div class="ep-field">
+        <label>Estado de pago</label>
+        <div class="ep-estado-row">
+          <button class="estado-btn ${selPag}" onclick="cambiarEstado(${ep.n},'PAGADO')">✓ Pagado</button>
+          <button class="estado-btn ${selPen}" onclick="cambiarEstado(${ep.n},'PENDIENTE')">⏳ Pendiente</button>
+        </div>
+      </div>
+      <div class="ep-field">
+        <label>Fecha CAS</label>
+        <input class="ep-input" type="text" placeholder="dd/mm/aaaa" value="${ep.cas}" onchange="cambiarCampo(${ep.n},'cas',this.value)">
+      </div>
+      <div class="ep-field">
+        <label>Multas (UF)</label>
+        <input class="ep-input" type="number" min="0" step="0.1" value="${ep.multas}" onchange="cambiarCampo(${ep.n},'multas',parseFloat(this.value)||0)">
+      </div>
+      <div class="ep-field">
+        <label>Observaciones</label>
+        <input class="ep-input" type="text" placeholder="Agregar nota…" value="${ep.obs}" onchange="cambiarCampo(${ep.n},'obs',this.value)">
+      </div>
+      <button class="btn-guardar" onclick="guardarEPBtn(${ep.n})">
+        <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Guardar cambios
+      </button>
+    </div>
+  </div>`;
+}
+
+function toggleEP(n) {
+  openEP = openEP === n ? null : n;
+  filtrar();
+}
+
+function cambiarEstado(n, estado) {
+  const ep = eps.find(e=>e.n===n);
+  if(ep) ep.estado = estado;
+  actualizarMetricas();
+  filtrar();
+}
+
+function cambiarCampo(n, campo, valor) {
+  const ep = eps.find(e=>e.n===n);
+  if(ep) { ep[campo] = valor; actualizarMetricas(); }
+}
+
+function guardarEPBtn(n) {
+  const ep = eps.find(e=>e.n===n);
+  if(ep) guardarEP(ep);
+}
+
+// ---- CHECKLIST ----
+function buildMonthGrid() {
+  document.getElementById('month-grid').innerHTML = MESES.map(m => {
+    const done = checkState[m].filter(Boolean).length;
+    const sel = m === selectedMes ? ' sel' : '';
+    return `<div class="month-btn${sel}" onclick="selectMes('${m}',this)">
+      <div class="month-name">${m}</div>
+      <div class="month-prog">${done}/${ITEMS_CHECK.length}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectMes(mes, el) {
+  selectedMes = mes;
+  document.querySelectorAll('.month-btn').forEach(b=>b.classList.remove('sel'));
+  el.classList.add('sel');
+  const panel = document.getElementById('check-panel');
+  panel.style.display = 'block';
+  document.getElementById('check-panel-title').textContent = mes + ' — revisión';
+  renderCheckList(mes);
+}
+
+function renderCheckList(mes) {
+  const list = document.getElementById('check-list');
+  list.innerHTML = ITEMS_CHECK.map((item,i) => {
+    const done = checkState[mes][i];
+    return `<div class="check-item${done?' done':''}" onclick="toggleCheck('${mes}',${i})">
+      <div class="check-box"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+      <span class="check-label">${item}</span>
+    </div>`;
+  }).join('');
+  const done = checkState[mes].filter(Boolean).length;
+  document.getElementById('check-prog').textContent = `${done} de ${ITEMS_CHECK.length} ítems completados`;
+}
+
+function toggleCheck(mes, idx) {
+  checkState[mes][idx] = !checkState[mes][idx];
+  renderCheckList(mes);
+  buildMonthGrid();
+  guardarCheck(mes, idx, checkState[mes][idx]);
+}
+
+// ---- NAV ----
+function nav(screen, btn) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('screen-'+screen).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ---- EXPORTAR EXCEL ----
+function exportarExcel() {
+  const wb = XLSX.utils.book_new();
+  const dash = [
+    ['CONTROL DE CONTRATO — SIT-321-2023-G'],[''],
+    ['N° Contrato','SIT-321-2023-G','ID Licitación','CSER-79-2023'],
+    ['Pedido SAP','4600003617','Inicio','01/01/2024','Término','31/12/2026'],[''],
+    ['EPs Pagados',eps.filter(e=>e.estado==='PAGADO').length,'EPs Pendientes',eps.filter(e=>e.estado==='PENDIENTE').length],
+    ['Neto Pagado (UF)',+eps.filter(e=>e.estado==='PAGADO').reduce((s,e)=>s+(e.valor-e.multas),0).toFixed(1)],
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet(dash);
+  ws1['!cols']=[{wch:20},{wch:18},{wch:14},{wch:18},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws1,'Dashboard');
+  const epRows = [['EP N°','Mes','Fecha CAS','Valor UF','Multas','Neto UF','Estado','Observaciones'],
+    ...eps.map(e=>[e.n,e.mes,e.cas,e.valor,e.multas,+(e.valor-e.multas).toFixed(1),e.estado,e.obs]),
+    [],['TOTAL','','',+eps.reduce((s,e)=>s+e.valor,0).toFixed(1),+eps.reduce((s,e)=>s+e.multas,0).toFixed(1),+eps.reduce((s,e)=>s+(e.valor-e.multas),0).toFixed(1)]
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(epRows);
+  ws2['!cols']=[{wch:6},{wch:16},{wch:12},{wch:10},{wch:10},{wch:10},{wch:12},{wch:40}];
+  XLSX.utils.book_append_sheet(wb,ws2,'EstadosDePago');
+  const chkRows=[['Ítem',...MESES],...ITEMS_CHECK.map((it,i)=>[it,...MESES.map(m=>checkState[m][i]?'COMPLETADO':'PENDIENTE')])];
+  const ws3 = XLSX.utils.aoa_to_sheet(chkRows);
+  ws3['!cols']=[{wch:44},...MESES.map(()=>({wch:13}))];
+  XLSX.utils.book_append_sheet(wb,ws3,'Checklist');
+  XLSX.writeFile(wb,'SIT-321-2023-G_Control.xlsx');
+}
+
+// ---- INIT ----
+setTimeout(()=>{
+  document.getElementById('loading-msg').textContent = 'Cargando datos…';
+  cargarDatos();
+}, 600);
+</script>
+</body>
+</html>
